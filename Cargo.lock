@@ -1623,6 +1623,7 @@ dependencies = [
 name = "multitouch_client"
 version = "0.0.0"
 dependencies = [
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "tauri",
