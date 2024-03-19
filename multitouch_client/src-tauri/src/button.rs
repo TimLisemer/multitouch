@@ -3,16 +3,18 @@ pub struct Button {
     id: i32,
     coordinates: (f32, f32),
     dimensions: (f32, f32),
-    text: String,
+    label: String,
+    color: String,
 }
 
 impl Button {
-    pub fn new(id: i32, coordinates: (f32, f32), dimensions: (f32, f32), text: String) -> Self {
+    pub fn new(id: i32, coordinates: (f32, f32), dimensions: (f32, f32), label: String, color: String) -> Self {
         Self {
             id,
             coordinates,
             dimensions,
-            text,
+            label,
+            color,
         }
     }
 }

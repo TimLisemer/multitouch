@@ -3,12 +3,15 @@ const { listen } = window.__TAURI__.event;
 
 import './size.js';
 import { Finger, Status } from './Finger.js';
+import {Button} from "./Button.js";
 
 const canvas = document.getElementById('main_canvas');
 const ctx = canvas.getContext('2d');
 
-let fingers = [Finger];
 const bottom_info = document.getElementById('bottom_info');
+
+let fingers = [Finger];
+let buttons = [Button];
 
 invoke("start_background_worker").then(() => console.log("Background worker started"));
 
@@ -37,7 +40,18 @@ await listen('finger_update', (event) => {
             }
       }
 
+      for (let button of buttons) {
+            drawButton(button);
+      }
+
 });
+
+
+await listen('button_update', (event) => {
+      const payload_button = Button.deserializePayload(event.payload);
+      buttons.push(payload_button);
+});
+
 
 
 function denormalizeCoordinates(normalizedCoordinates) {
@@ -50,13 +64,14 @@ function denormalizeCoordinates(normalizedCoordinates) {
       return [denormalizedX, denormalizedY];
 }
 
-function drawButton(x, y, text) {
+function drawButton(button) {
+      const {coordinates, dimensions, label, color} = button;
       // Draw a button-like rectangle
-      ctx.fillStyle = '#4CAF50'; // Green color
-      ctx.fillRect(x, y, 80, 30); // Assuming a fixed size for the button
+      ctx.fillStyle = color;
+      ctx.fillRect(coordinates[0], coordinates[1], dimensions[0], dimensions[1]);
 
       // Add text to the button
       ctx.fillStyle = 'white'; // White text color
       ctx.font = 'bold 14px Arial';
-      ctx.fillText(text, x + 10, y + 20); // Adjust text position according to button size
+      ctx.fillText(label, coordinates[0] + 10, coordinates[1] + 20); // Adjust text position according to button size
 }
