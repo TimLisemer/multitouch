@@ -20,14 +20,16 @@ struct IdToCursor {
 struct Finger {
     id: Option<u32>,
     history: Vec<(i32, i32)>,
+    normalised_history: Option<Vec<(f32, f32)>>,
     active: u32, // 0 newest, 9 oldest
 }
 
 impl Finger {
-    fn new(id: Option<u32>, history: Vec<(i32, i32)>, active: u32) -> Self {
+    fn new(id: Option<u32>, history: Vec<(i32, i32)>, normalised_history: Option<Vec<(f32, f32)>>, active: u32) -> Self {
         Self {
             id,
             history,
+            normalised_history,
             active,
         }
     }
@@ -57,7 +59,6 @@ fn main() {
 }
 
 fn tuio () -> Server{
-
     let server_name = "server_name";
     let mut server =
         Server::from_socket_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 9988)).unwrap();
@@ -68,22 +69,31 @@ fn tuio () -> Server{
     return server;
 }
 
-fn tuio_new_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
+fn tuio_new_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>, frame_time: f32) {
     // Send new finger to TUIO server
     server.init_frame();
-    let cursor: i32 = server.create_cursor(finger.history.last().unwrap().0 as f32, finger.history.last().unwrap().1 as f32);
+    let normalised_history = finger.normalised_history.unwrap();
+    let coordinates = normalised_history.last().unwrap();
+    let velocity = calculate_velocity(normalised_history, frame_time);
+    let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
+
+    let cursor: i32 = server.create_cursor(coordinates.0 as f32, coordinates.1 as f32);
     server.commit_frame();
 
     let id_to_cursor = IdToCursor { id: finger.id.unwrap(), cursor };
     ids_to_cursors.push(id_to_cursor);
 }
 
-fn tuio_update_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
+fn tuio_update_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>, frame_time: f32) {
+    let normalised_history = finger.normalised_history.unwrap();
+    let coordinates = normalised_history.last().unwrap();
+    let velocity = calculate_velocity(normalised_history, frame_time);
+    let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
     let cursor: i32 = ids_to_cursors.iter().find(|id_to_cursor| id_to_cursor.id == finger.id.unwrap()).unwrap().cursor;
 
     // Send updated finger to TUIO server
     server.init_frame();
-    server.update_cursor(cursor, finger.history.last().unwrap().0 as f32, finger.history.last().unwrap().1 as f32);
+    server.update_cursor(cursor, coordinates.0, coordinates.1);
     server.commit_frame();
 }
 
@@ -106,6 +116,8 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
         .unwrap();
     let total_frames = total_frames as i32;
 
+    let mut frame_time = 0.0;
+
     let mut gray_background = background.clone();
     imgproc::cvt_color_def(&background, &mut gray_background, imgproc::COLOR_BGR2GRAY).unwrap();
 
@@ -115,6 +127,8 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
     highgui::resize_window("multi-touch", 720, 480).unwrap();
 
     loop {
+        let begin_frame = std::time::Instant::now();
+
         // if the last frame of the video is reached, reset the frame_counter and start again
         if frame_counter == total_frames {
             frame_counter = 0;
@@ -129,8 +143,6 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
         if success {
             let mut image = frame.clone();
 
-            // My code
-
             let temp_image = image.clone();
             imgproc::cvt_color_def(&temp_image, &mut image, imgproc::COLOR_BGR2GRAY).unwrap();
 
@@ -139,7 +151,7 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
             let ellipse_image = detect_fingers(&image, &frame, &mut finger_coordinates);
             // println!("\n \nFinger coordinates: {:?}", finger_coordinates);
 
-            manage_fingers(&mut fingers, &finger_coordinates, ids_to_cursors, server);
+            manage_fingers(&mut fingers, &finger_coordinates, ids_to_cursors, server, frame_time);
             // Print Active Fingers with ID and Location
             let mut final_image = ellipse_image.clone();
             for finger in fingers.clone() {
@@ -160,8 +172,6 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
                 }
             }
 
-            // End of my code
-
             highgui::imshow("multi-touch", &final_image).unwrap();
             let key = highgui::wait_key(50).unwrap();
             if key == 27 {
@@ -169,17 +179,19 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
                 break;
             }
             frame_counter += 1;
+            frame_time = begin_frame.elapsed().as_secs_f32();
+            // println!("Frame time: {}", frame_time);
         }
     }
 }
 
-fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)>,ids_to_cursors: &mut Vec<IdToCursor>, server: &mut Server) {
+fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)>,ids_to_cursors: &mut Vec<IdToCursor>, server: &mut Server, frame_time: f32) {
     // No Existing fingers
     if fingers.is_empty() {
         for (i, finger_coordinate) in finger_coordinates.iter().enumerate() {
-            let new_finger = Finger::new(Some(i as u32), vec![*finger_coordinate], 0);
+            let new_finger = Finger::new(Some(i as u32), vec![*finger_coordinate], Some(vec![normalise_coordinates(*finger_coordinate)]), 0);
             fingers.push(new_finger.clone());
-            tuio_new_finger(new_finger.clone(), server, ids_to_cursors);
+            tuio_new_finger(new_finger.clone(), server, ids_to_cursors, frame_time);
         }
         return;
     }
@@ -188,9 +200,9 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
     for finger_coordinate in finger_coordinates {
         let nearest_finger = find_nearest_fingers(*finger_coordinate, fingers.clone(), 250);
         if nearest_finger.id.is_none() {
-            let new_finger = Finger::new(Some(ids_to_cursors.len() as u32), vec![*finger_coordinate], 0);
+            let new_finger = Finger::new(Some(ids_to_cursors.len() as u32), vec![*finger_coordinate], Some(vec![normalise_coordinates(*finger_coordinate)]), 0);
             fingers.push(new_finger.clone());
-            tuio_new_finger(new_finger.clone(), server, ids_to_cursors);
+            tuio_new_finger(new_finger.clone(), server, ids_to_cursors, frame_time);
         } else {
             let nearest_finger = fingers
                 .iter_mut()
@@ -198,7 +210,7 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
                 .unwrap();
             nearest_finger.history.push(*finger_coordinate);
             nearest_finger.active = 0;
-            tuio_update_finger(nearest_finger.clone(), server, ids_to_cursors);
+            tuio_update_finger(nearest_finger.clone(), server, ids_to_cursors, frame_time);
         }
     }
 
@@ -381,7 +393,7 @@ fn find_nearest_fingers(
     distance_to_finger_threshold: i32,
 ) -> Finger {
     let mut current_min_distance = 999999; // arbitrary large number
-    let mut nearest_finger = Finger::new(None, Vec::new(), 0);
+    let mut nearest_finger = Finger::new(None, Vec::new(), None,0);
 
     for finger in fingers {
         let finger_location = finger.history.last().unwrap();
@@ -396,3 +408,35 @@ fn find_nearest_fingers(
     }
     nearest_finger
 }
+
+fn normalise_coordinates(coordinate: (i32, i32)) -> (f32, f32){
+    let max_x = 752;
+    let max_y = 480;
+
+    let normalised_x = coordinate.0 as f32 / max_x as f32;
+    let normalised_y = coordinate.1 as f32 / max_y as f32;
+
+    (normalised_x, normalised_y)
+}
+
+// Method to calculate velocity between two points
+fn calculate_velocity(normalized_history: Vec<(f32, f32)>, frame_time: f32) -> (f32, f32) {
+    let current_point = normalized_history.last().unwrap();
+    let previous_point = normalized_history.get(normalized_history.len() - 2).unwrap();
+
+    let velocity_x = (previous_point.0 - current_point.0) / frame_time;
+    let velocity_y = (previous_point.1 - current_point.1) / frame_time;
+    (velocity_x, velocity_y)
+}
+
+// Method to calculate acceleration between two points
+fn calculate_acceleration(normalized_history: Vec<(f32, f32)>, frame_time: f32) -> f32 {
+    let current_point = normalized_history.last().unwrap();
+    let previous_point = normalized_history.get(normalized_history.len() - 2).unwrap();
+
+    let distance_squared = (previous_point.0 - current_point.1).powi(2) + (previous_point.0 - current_point.1).powi(2);
+    let distance = (distance_squared as f32).sqrt();
+    let acceleration_magnitude = distance / (frame_time * frame_time);
+    acceleration_magnitude
+}
+
