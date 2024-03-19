@@ -60,8 +60,8 @@ fn main() {
 
 fn tuio () -> Server{
     let server_name = "server_name";
-    let mut server =
-        Server::from_socket_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 9988)).unwrap();
+    // let mut server = Server::from_socket_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 9988)).unwrap();
+    let mut server = Server::new("server_name").unwrap();
     server.set_source_name(server_name);
 
     println!("[SERVER] Starting TUIO server: {}", server_name);
@@ -71,14 +71,12 @@ fn tuio () -> Server{
 
 fn tuio_new_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>, frame_time: f32) {
     // Send new finger to TUIO server
-    server.init_frame();
     let normalised_history = finger.normalised_history.unwrap();
     let coordinates = normalised_history.last().unwrap();
-    let velocity = calculate_velocity(normalised_history, frame_time);
-    let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
+    //let velocity = calculate_velocity(normalised_history, frame_time);
+    //let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
 
-    let cursor: i32 = server.create_cursor(coordinates.0 as f32, coordinates.1 as f32);
-    server.commit_frame();
+    let mut cursor: i32 = server.create_cursor(coordinates.0, coordinates.1);
 
     let id_to_cursor = IdToCursor { id: finger.id.unwrap(), cursor };
     ids_to_cursors.push(id_to_cursor);
@@ -87,14 +85,13 @@ fn tuio_new_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Ve
 fn tuio_update_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>, frame_time: f32) {
     let normalised_history = finger.normalised_history.unwrap();
     let coordinates = normalised_history.last().unwrap();
-    let velocity = calculate_velocity(normalised_history, frame_time);
-    let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
+    //let velocity = calculate_velocity(normalised_history, frame_time);
+    //let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
+
     let cursor: i32 = ids_to_cursors.iter().find(|id_to_cursor| id_to_cursor.id == finger.id.unwrap()).unwrap().cursor;
 
     // Send updated finger to TUIO server
-    server.init_frame();
     server.update_cursor(cursor, coordinates.0, coordinates.1);
-    server.commit_frame();
 }
 
 fn tuio_remove_finger (finger_id: u32, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
@@ -128,6 +125,7 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
 
     loop {
         let begin_frame = std::time::Instant::now();
+        server.init_frame();
 
         // if the last frame of the video is reached, reset the frame_counter and start again
         if frame_counter == total_frames {
@@ -178,6 +176,7 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
                 // escape key
                 break;
             }
+            server.commit_frame();
             frame_counter += 1;
             frame_time = begin_frame.elapsed().as_secs_f32();
             // println!("Frame time: {}", frame_time);
