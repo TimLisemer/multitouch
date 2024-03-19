@@ -4,8 +4,19 @@
 use std::thread::sleep;
 use tauri::Window;
 
+// Enum for the different status types -> Create, Update, Delete
+#[derive(Clone, serde::Serialize)]
+enum Status {
+    Create,
+    Update,
+    Delete,
+}
+
 #[derive(Clone, serde::Serialize)]
 struct Payload {
+    id: u32,
+    status: Status,
+    coordinates: (f32, f32),
     message: String,
 }
 
@@ -13,9 +24,18 @@ struct Payload {
 fn start_background_worker(window: Window) {
     // Start the background worker here
     println!("Starting background worker");
+
+    // Test Paylaoad Data
+    let id = 15;
+    let status = Status::Create;
+    let coordinates = (50.0, 100.0);
+    let message = "Test message".to_string();
+
+    let payload = Payload {id, status, coordinates, message};
+
     std::thread::spawn(move || {
         loop {
-            window.emit("finger_update", Payload { message: "Tauri is awesome!".into() }).unwrap();
+            window.emit("finger_update", payload.clone()).unwrap();
             sleep(std::time::Duration::from_secs(1));
         }
     });

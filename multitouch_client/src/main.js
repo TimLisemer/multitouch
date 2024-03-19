@@ -2,6 +2,7 @@ const { invoke } = window.__TAURI__.tauri;
 const { listen } = window.__TAURI__.event;
 
 import './size.js';
+import { finger_payload } from './finger_payload.js';
 
 const canvas = document.getElementById('main_canvas');
 const bottom_info = document.getElementById('bottom_info');
@@ -16,13 +17,10 @@ ctx.fillRect(0, 0, 100, 100);
 invoke("start_background_worker").then(() => console.log("Background worker started"));
 
 const finger_update = await listen('finger_update', (event) => {
-      console.log(event.payload);
-      // bottom_info.innerHTML = event.payload;
-      bottom_info.innerHTML = coordinate_x;
-      /*
-      coordinate_x = event.x;
-      coordinate_y = event.y;
-       */
+      const payload = finger_payload.deserializePayload(event.payload);
+      console.log(payload.toString());
+      bottom_info.innerHTML = payload.toBottomInfo();
+
       coordinate_x += 10;
       coordinate_y += 10;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
