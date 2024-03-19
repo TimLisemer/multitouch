@@ -1,11 +1,10 @@
-import { Status } from './finger_payload.js';
-
 export class finger {
     constructor(id, coordinates, ctx, draw_size) {
         this._id = id;
         this._coordinates = coordinates;
         this._ctx = ctx;
         this._draw_size = draw_size;
+        this._color = this.getRandomColor();
     }
 
     get id() {
@@ -19,6 +18,19 @@ export class finger {
     set coordinates(coordinates) {
         // this.remove_finger_from_canvas(this.coordinates);
         this._coordinates = coordinates;
+    }
+
+    get color() {
+        return this._color;
+    }
+
+    getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i += 1) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
     }
 
     /*
@@ -59,7 +71,6 @@ export class finger {
     }
 
      */
-
 }
 
 

@@ -32,18 +32,25 @@ await listen('finger_update', (event) => {
       }
 
       // current_finger.draw_finger_to_canvas(payload.status);    // Replaced by method below
-
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      for (let finger of fingers) {
-            let coords = finger.coordinates;
-            if (coords !== undefined) {   // Todo: Why undefined? Might be a problem
-                  ctx.fillRect(finger.coordinates[0], finger.coordinates[1], 10, 10);
-            }
-      }
+      draw();
 
 
 });
+
+function draw () {
+      drawButton(0,0, "    Test");
+      console.log(canvas.height, canvas.width);
+
+      // Fingers:
+      for (let finger of fingers) {
+            let coords = finger.coordinates;
+            if (coords !== undefined) {   // Todo: Why undefined? Might be a problem
+                  ctx.fillStyle = finger.color;
+                  ctx.fillRect(finger.coordinates[0], finger.coordinates[1], 10, 10);
+            }
+      }
+}
 
 
 function denormalizeCoordinates(normalizedCoordinates) {
@@ -54,4 +61,15 @@ function denormalizeCoordinates(normalizedCoordinates) {
       const denormalizedX = normalizedCoordinates[0] * (maxX - minX) + minX;
       const denormalizedY = normalizedCoordinates[1] * (maxY - minY) + minY;
       return [denormalizedX, denormalizedY];
+}
+
+function drawButton(x, y, text) {
+      // Draw a button-like rectangle
+      ctx.fillStyle = '#4CAF50'; // Green color
+      ctx.fillRect(x, y, 80, 30); // Assuming a fixed size for the button
+
+      // Add text to the button
+      ctx.fillStyle = 'white'; // White text color
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(text, x + 10, y + 20); // Adjust text position according to button size
 }
