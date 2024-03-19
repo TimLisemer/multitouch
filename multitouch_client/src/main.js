@@ -23,7 +23,7 @@ await listen('finger_update', (event) => {
 
       let current_finger = fingers.find(finger => finger.id === payload.id);
       if (current_finger === undefined) {
-            current_finger = new finger(payload.id, payload.status, coordinates, ctx, canvas, 10);
+            current_finger = new finger(payload.id, payload.status, coordinates, ctx, 10);
             fingers.push(current_finger);
       } else {
             current_finger.coordinates = coordinates;
