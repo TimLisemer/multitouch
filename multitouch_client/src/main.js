@@ -24,7 +24,7 @@ await listen('finger_update', (event) => {
             current_finger.status = payload_finger.status;
       }
 
-      bottom_info.innerHTML = "Finger " + current_finger.id + " is at " + current_finger.status;
+      bottom_info.innerHTML = "Finger " + current_finger.id + " is at " + coordinates[0] + ", " + coordinates[1];
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
