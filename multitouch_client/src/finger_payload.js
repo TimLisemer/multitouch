@@ -1,5 +1,5 @@
 // Define the enum for Status
-const Status = {
+export const Status = {
     Create: "Create",
     Update: "Update",
     Delete: "Delete"
