@@ -1,48 +1,46 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod button;
+mod ui;
+mod finger;
+
+use std::sync::{Arc, Mutex};
 use tuio_rs::{Client};
-use tauri::Window;
-use tuio_rs::client::{CursorEvent, TuioEvents};
+use tauri::{State, Window};
+use crate::ui::initialize_ui;
+use crate::finger::{Finger, process_finger_event};
 
-// Enum for the different status types -> Create, Update, Delete
-#[derive(Clone, serde::Serialize)]
-enum Status {
-    Create,
-    Update,
-    Delete,
+#[derive(Clone)]
+struct MyState {
+    ui: Arc<Mutex<Vec<Finger>>>,
 }
 
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    id: i32,
-    status: Status,
-    coordinates: (f32, f32),
-    message: Option<String>,
-}
-
-impl Payload {
-    fn new(id: i32, status: Status, coordinates: (f32, f32), message: Option<String>) -> Self {
+impl MyState {
+    fn new(fingers: Vec<Finger>) -> Self {
         Self {
-            id,
-            status,
-            coordinates,
-            message,
+            ui: Arc::new(Mutex::new(fingers)),
         }
+    }
+    fn get_ui(&self) -> Arc<Mutex<Vec<Finger>>> {
+        self.ui.clone()
     }
 }
 
 fn main() {
-    tauri::Builder::default()
+    let ui = initialize_ui();
+    let my_state = MyState::new(ui);
+    tauri::Builder::default().manage(my_state)
         .invoke_handler(tauri::generate_handler![start_background_worker])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 #[tauri::command]
-fn start_background_worker(window: Window) {
+fn start_background_worker(window: Window, state: State<MyState>) {
     // Start the background worker here
     println!("Starting background worker");
+    let state_cone = state.get_ui();
 
     std::thread::spawn(move || {
         let client = Client::new().unwrap();
@@ -50,44 +48,10 @@ fn start_background_worker(window: Window) {
 
         loop {
             if let Ok(Some(events)) = client.refresh() {
-                process_events(events, window.clone());
+                process_finger_event(events, window.clone(), state_cone.clone());
             }
         }
     });
-}
-
-fn process_events(events: TuioEvents, window: Window) {
-    for event in events.cursor_events {
-        match event {
-            CursorEvent::New(data) => {
-                let payload = Payload::new(
-                    data.cursor.get_session_id(),
-                    Status::Create,
-                    (data.cursor.get_position().x, data.cursor.get_position().y),
-                    None,
-                );
-                window.emit("finger_update", payload.clone()).unwrap();
-            }
-            CursorEvent::Update(data) => {
-                let payload = Payload::new(
-                    data.cursor.get_session_id(),
-                    Status::Update,
-                    (data.cursor.get_position().x, data.cursor.get_position().y),
-                    None,
-                );
-                window.emit("finger_update", payload.clone()).unwrap();
-            }
-            CursorEvent::Remove(data) => {
-                let payload = Payload::new(
-                    data.cursor.get_session_id(),
-                    Status::Delete,
-                    (data.cursor.get_position().x, data.cursor.get_position().y),
-                    None,
-                );
-                window.emit("finger_update", payload.clone()).unwrap();
-            }
-        }
-    }
 }
 
 
