@@ -1,12 +1,13 @@
 import { Status } from './finger_payload.js';
 
 export class finger {
-
-    constructor(id, status, coordinates, previousCoordinates) {
+    constructor(id, status, coordinates, ctx, canvas, draw_size) {
         this._id = id;
         this._status = status;
         this._coordinates = coordinates;
-        this._previousCoordinates = previousCoordinates;
+        this._ctx = ctx;
+        this._canvas = canvas;
+        this._draw_size = draw_size;
     }
 
     get id() {
@@ -22,41 +23,49 @@ export class finger {
     }
 
     set coordinates(coordinates) {
+        this.remove_finger_from_canvas(coordinates);
         this._coordinates = coordinates;
     }
 
-    get previousCoordinates() {
-        return this._previousCoordinates;
+    get ctx() {
+        return this._ctx;
     }
 
-    set previousCoordinates(previousCoordinates) {
-        this._previousCoordinates = previousCoordinates;
+    get canvas() {
+        return this._canvas;
     }
 
-    static draw_finger_to_canvas(ctx, canvas, status, denormalizedCoordinates, previousCoordinates) {
+    get draw_size() {
+        return this._draw_size;
+    }
+
+    draw_finger_to_canvas(status) {
         if (status === Status.Create) {
-            this.add_finger_to_canvas(ctx, canvas, denormalizedCoordinates);
+            this.add_finger_to_canvas(this.coordinates);
         } else if (status === Status.Update) {
-            this.update_finger_on_canvas(ctx, canvas, denormalizedCoordinates, previousCoordinates);
+            this.update_finger_on_canvas(this.coordinates);
         } else if (status === Status.Delete) {
-            this.remove_finger_from_canvas(ctx, canvas, denormalizedCoordinates);
+            this.remove_finger_from_canvas(this.coordinates);
         }
     }
 
-    static add_finger_to_canvas(ctx, canvas, denormalizedCoordinates) {
+
+    add_finger_to_canvas(denormalizedCoordinates) {
         const coordinate_x = denormalizedCoordinates[0];
         const coordinate_y = denormalizedCoordinates[1];
-        ctx.fillRect(coordinate_x, coordinate_y, 10, 10);
+        this.ctx.fillRect(coordinate_x, coordinate_y, this.draw_size, this.draw_size);
     }
 
-    static remove_finger_from_canvas(ctx, canvas, denormalizedCoordinates) {
+    remove_finger_from_canvas(denormalizedCoordinates) {
         const coordinate_x = denormalizedCoordinates[0];
         const coordinate_y = denormalizedCoordinates[1];
-        ctx.clearRect(coordinate_x, coordinate_y, 10, 10);
+        this.ctx.clearRect(coordinate_x, coordinate_y, this.draw_size, this.draw_size);
     }
 
-    static update_finger_on_canvas(ctx, canvas, denormalizedCoordinates, previousCoordinates) {
-        this.remove_finger_from_canvas(ctx, canvas, previousCoordinates);
-        this.add_finger_to_canvas(ctx, canvas, denormalizedCoordinates);
+    update_finger_on_canvas(denormalizedCoordinates) {
+        this.add_finger_to_canvas(denormalizedCoordinates);
     }
+
 }
+
+

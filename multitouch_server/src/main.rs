@@ -1,4 +1,6 @@
 extern crate opencv;
+
+use std::thread::sleep;
 // use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tuio_rs::{Server};
 
@@ -20,12 +22,12 @@ struct IdToCursor {
 struct Finger {
     id: Option<u32>,
     history: Vec<(i32, i32)>,
-    normalised_history: Option<Vec<(f32, f32)>>,
+    normalised_history: Vec<(f32, f32)>,
     active: u32, // 0 newest, 9 oldest
 }
 
 impl Finger {
-    fn new(id: Option<u32>, history: Vec<(i32, i32)>, normalised_history: Option<Vec<(f32, f32)>>, active: u32) -> Self {
+    fn new(id: Option<u32>, history: Vec<(i32, i32)>, normalised_history: Vec<(f32, f32)>, active: u32) -> Self {
         Self {
             id,
             history,
@@ -71,40 +73,36 @@ fn tuio () -> Server{
 
 fn tuio_new_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
     // Send new finger to TUIO server
-    let normalised_history = finger.normalised_history.unwrap();
-    let coordinates = normalised_history.last().unwrap();
+    let coordinates = finger.normalised_history.last().unwrap();
     //let velocity = calculate_velocity(normalised_history, frame_time);
     //let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
 
-    server.init_frame();
     let cursor: i32 = server.create_cursor(coordinates.0, coordinates.1);
-    server.commit_frame();
 
     let id_to_cursor = IdToCursor { id: finger.id.unwrap(), cursor };
     ids_to_cursors.push(id_to_cursor);
 }
 
 fn tuio_update_finger (finger: Finger, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
-    let normalised_history = finger.normalised_history.unwrap();
-    let coordinates = normalised_history.last().unwrap();
+    let coordinates = finger.normalised_history.last().unwrap();
     //let velocity = calculate_velocity(normalised_history, frame_time);
     //let acceleration = calculate_acceleration(normalised_history.clone(), frame_time);
 
     let cursor: i32 = ids_to_cursors.iter().find(|id_to_cursor| id_to_cursor.id == finger.id.unwrap()).unwrap().cursor;
 
     // Send updated finger to TUIO server
-    server.init_frame();
     server.update_cursor(cursor, coordinates.0, coordinates.1);
-    server.commit_frame();
 }
 
 fn tuio_remove_finger (finger_id: u32, server: &mut Server, ids_to_cursors: &mut Vec<IdToCursor>) {
+    if ids_to_cursors.len() == 0 {
+        return;
+    }
+
     let cursor: i32 = ids_to_cursors.iter().find(|id_to_cursor| id_to_cursor.id == finger_id).unwrap().cursor;
 
     // Send removed finger to TUIO server
-    server.init_frame();
     server.remove_cursor(cursor);
-    server.commit_frame();
 }
 
 fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdToCursor>, server: &mut Server) {
@@ -133,9 +131,11 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
         if frame_counter == total_frames {
             frame_counter = 0;
             cap.set(videoio::CAP_PROP_POS_FRAMES, 0.0).unwrap();
-            ids_to_cursors.clear();
-            fingers.clear();
         }
+
+        // sleep(std::time::Duration::from_millis(100));
+
+        server.init_frame();
 
         let mut frame = core::Mat::default();
         let success = cap.read(&mut frame).unwrap();
@@ -172,15 +172,24 @@ fn video(video_path: &str, background: &core::Mat, ids_to_cursors: &mut Vec<IdTo
                 }
             }
 
+            frame_counter += 1;
+            if frame_counter == total_frames {
+                ids_to_cursors.clear();
+                fingers.iter().for_each(|finger| tuio_remove_finger(finger.id.unwrap(), server, ids_to_cursors));
+                fingers.clear();
+            }
+            server.commit_frame();
+            // frame_time = begin_frame.elapsed().as_secs_f32();
+            // println!("Frame time: {}", frame_time);
+
             highgui::imshow("multi-touch", &final_image).unwrap();
             let key = highgui::wait_key(50).unwrap();
+            // let key = highgui::wait_key(0).unwrap();
             if key == 27 {
                 // escape key
                 break;
             }
-            frame_counter += 1;
-            // frame_time = begin_frame.elapsed().as_secs_f32();
-            // println!("Frame time: {}", frame_time);
+
         }
     }
 }
@@ -189,7 +198,7 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
     // No Existing fingers
     if fingers.is_empty() {
         for (i, finger_coordinate) in finger_coordinates.iter().enumerate() {
-            let new_finger = Finger::new(Some(i as u32), vec![*finger_coordinate], Some(vec![normalise_coordinates(*finger_coordinate)]), 0);
+            let new_finger = Finger::new(Some(i as u32), vec![*finger_coordinate], vec![normalise_coordinates(*finger_coordinate)], 0);
             fingers.push(new_finger.clone());
             tuio_new_finger(new_finger.clone(), server, ids_to_cursors);
         }
@@ -200,7 +209,7 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
     for finger_coordinate in finger_coordinates {
         let nearest_finger = find_nearest_fingers(*finger_coordinate, fingers.clone(), 250);
         if nearest_finger.id.is_none() {
-            let new_finger = Finger::new(Some(ids_to_cursors.len() as u32), vec![*finger_coordinate], Some(vec![normalise_coordinates(*finger_coordinate)]), 0);
+            let new_finger = Finger::new(Some(ids_to_cursors.len() as u32), vec![*finger_coordinate], vec![normalise_coordinates(*finger_coordinate)], 0);
             fingers.push(new_finger.clone());
             tuio_new_finger(new_finger.clone(), server, ids_to_cursors);
         } else {
@@ -209,6 +218,7 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
                 .find(|finger| finger.id == nearest_finger.id)
                 .unwrap();
             nearest_finger.history.push(*finger_coordinate);
+            nearest_finger.normalised_history.push(normalise_coordinates(*finger_coordinate));
             nearest_finger.active = 0;
             tuio_update_finger(nearest_finger.clone(), server, ids_to_cursors);
         }
@@ -221,7 +231,7 @@ fn manage_fingers(fingers: &mut Vec<Finger>, finger_coordinates: &Vec<(i32, i32)
         if finger.active < 10 {
             finger.active += 1;
             temp_fingers.push(finger.clone());
-        } else {
+        } else if finger.active == 10 {
             tuio_remove_finger(finger.id.unwrap(), server, ids_to_cursors);
         }
     });
@@ -393,7 +403,7 @@ fn find_nearest_fingers(
     distance_to_finger_threshold: i32,
 ) -> Finger {
     let mut current_min_distance = 999999; // arbitrary large number
-    let mut nearest_finger = Finger::new(None, Vec::new(), None,0);
+    let mut nearest_finger = Finger::new(None, Vec::new(), Vec::new(),0);
 
     for finger in fingers {
         let finger_location = finger.history.last().unwrap();
