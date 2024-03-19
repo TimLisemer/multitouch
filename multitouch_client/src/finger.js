@@ -22,8 +22,12 @@ export class finger {
     }
 
     set coordinates(coordinates) {
-        this.remove_finger_from_canvas(this.coordinates);
+        // this.remove_finger_from_canvas(this.coordinates);
         this._coordinates = coordinates;
+    }
+
+    set status(status) {
+        this._status = status;
     }
 
     get ctx() {
