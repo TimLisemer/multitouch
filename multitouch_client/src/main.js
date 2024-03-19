@@ -21,23 +21,23 @@ await listen('finger_update', (event) => {
 
       let current_finger = fingers.find(finger => finger.id === payload.id);
       if (current_finger === undefined) {
-            current_finger = new finger(payload.id, payload.status, coordinates, ctx, 10);
+            current_finger = new finger(payload.id, coordinates, ctx, 10);
             fingers.push(current_finger);
       } else {
             if (payload.status === Status.Delete ){
-                  fingers = fingers.filter(finger => finger.id !== payload.id);
+                  fingers = fingers.filter(finger => finger.id !== payload.id);     // Remove from fingers
             }
             current_finger.coordinates = coordinates;
             current_finger.status = payload.status;
       }
 
-      // current_finger.draw_finger_to_canvas(payload.status);
+      // current_finger.draw_finger_to_canvas(payload.status);    // Replaced by method below
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       for (let finger of fingers) {
             let coords = finger.coordinates;
-            if (coords !== undefined) {
+            if (coords !== undefined) {   // Todo: Why undefined? Might be a problem
                   ctx.fillRect(finger.coordinates[0], finger.coordinates[1], 10, 10);
             }
       }

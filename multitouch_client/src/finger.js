@@ -1,9 +1,8 @@
 import { Status } from './finger_payload.js';
 
 export class finger {
-    constructor(id, status, coordinates, ctx, draw_size) {
+    constructor(id, coordinates, ctx, draw_size) {
         this._id = id;
-        this._status = status;
         this._coordinates = coordinates;
         this._ctx = ctx;
         this._draw_size = draw_size;
@@ -11,10 +10,6 @@ export class finger {
 
     get id() {
         return this._id;
-    }
-
-    get status() {
-        return this._status;
     }
 
     get coordinates() {
@@ -26,9 +21,7 @@ export class finger {
         this._coordinates = coordinates;
     }
 
-    set status(status) {
-        this._status = status;
-    }
+    /*
 
     get ctx() {
         return this._ctx;
@@ -64,6 +57,8 @@ export class finger {
     update_finger_on_canvas(denormalizedCoordinates) {
         this.add_finger_to_canvas(denormalizedCoordinates);
     }
+
+     */
 
 }
 
