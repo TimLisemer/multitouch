@@ -1,8 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::thread::sleep;
+use tuio_rs::{Client};
 use tauri::Window;
+use tuio_rs::client::{CursorEvent, TuioEvents};
 
 // Enum for the different status types -> Create, Update, Delete
 #[derive(Clone, serde::Serialize)]
@@ -14,31 +15,21 @@ enum Status {
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
-    id: u32,
+    id: i32,
     status: Status,
     coordinates: (f32, f32),
-    message: String,
+    message: Option<String>,
 }
 
-#[tauri::command]
-fn start_background_worker(window: Window) {
-    // Start the background worker here
-    println!("Starting background worker");
-
-    // Test Paylaoad Data
-    let id = 15;
-    let status = Status::Create;
-    let coordinates = (50.0, 100.0);
-    let message = "Test message".to_string();
-
-    let payload = Payload {id, status, coordinates, message};
-
-    std::thread::spawn(move || {
-        loop {
-            window.emit("finger_update", payload.clone()).unwrap();
-            sleep(std::time::Duration::from_secs(1));
+impl Payload {
+    fn new(id: i32, status: Status, coordinates: (f32, f32), message: Option<String>) -> Self {
+        Self {
+            id,
+            status,
+            coordinates,
+            message,
         }
-    });
+    }
 }
 
 fn main() {
@@ -47,3 +38,56 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[tauri::command]
+fn start_background_worker(window: Window) {
+    // Start the background worker here
+    println!("Starting background worker");
+
+    std::thread::spawn(move || {
+        let client = Client::new().unwrap();
+        client.connect().expect("Client connecting");
+
+        loop {
+            if let Ok(Some(events)) = client.refresh() {
+                process_events(events, window.clone());
+            }
+        }
+    });
+}
+
+fn process_events(events: TuioEvents, window: Window) {
+    for event in events.cursor_events {
+        match event {
+            CursorEvent::New(data) => {
+                let payload = Payload::new(
+                    data.cursor.get_session_id(),
+                    Status::Create,
+                    (data.cursor.get_position().x, data.cursor.get_position().y),
+                    None,
+                );
+                window.emit("finger_update", payload.clone()).unwrap();
+            }
+            CursorEvent::Update(data) => {
+                let payload = Payload::new(
+                    data.cursor.get_session_id(),
+                    Status::Update,
+                    (data.cursor.get_position().x, data.cursor.get_position().y),
+                    None,
+                );
+                window.emit("finger_update", payload.clone()).unwrap();
+            }
+            CursorEvent::Remove(data) => {
+                let payload = Payload::new(
+                    data.cursor.get_session_id(),
+                    Status::Delete,
+                    (data.cursor.get_position().x, data.cursor.get_position().y),
+                    None,
+                );
+                window.emit("finger_update", payload.clone()).unwrap();
+            }
+        }
+    }
+}
+
+

@@ -27,7 +27,10 @@ export class finger_payload {
     }
 
     get message() {
-        return this._message;
+        if (this._message === undefined || this._message === null) {
+            return '';
+        }
+        return ' ' + this._message;
     }
 
     // Static method for deserializing payload
@@ -46,6 +49,6 @@ export class finger_payload {
     }
 
     toBottomInfo() {
-        return 'ID: ' + this.id + ' - ' + this.status + ' - ' + this.coordinates;
+        return 'ID: ' + this.id + ' - ' + this.status + ' - x=' + this.coordinates[0] + ' y=' + this.coordinates[1] + '' + this.message;
     }
 }
