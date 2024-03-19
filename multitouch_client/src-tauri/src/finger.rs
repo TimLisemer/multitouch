@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
-use tauri::{State, Window};
+
+use tauri::Window;
 use tuio_rs::client::{CursorEvent, TuioEvents};
 
 #[derive(Clone, serde::Serialize)]

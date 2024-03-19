@@ -2,55 +2,42 @@ const { invoke } = window.__TAURI__.tauri;
 const { listen } = window.__TAURI__.event;
 
 import './size.js';
-import { finger_payload, Status } from './finger_payload.js';
-import { finger } from './finger.js';
+import { Finger, Status } from './Finger.js';
 
 const canvas = document.getElementById('main_canvas');
-const bottom_info = document.getElementById('bottom_info');
-
 const ctx = canvas.getContext('2d');
+
+let fingers = [Finger];
+const bottom_info = document.getElementById('bottom_info');
 
 invoke("start_background_worker").then(() => console.log("Background worker started"));
 
-let fingers = [finger];
-
 await listen('finger_update', (event) => {
-      const payload = finger_payload.deserializePayload(event.payload);
-      bottom_info.innerHTML = payload.toBottomInfo();
-      const coordinates = denormalizeCoordinates(payload.coordinates);
+      const payload_finger = Finger.deserializePayload(event.payload)
+      const coordinates = denormalizeCoordinates(payload_finger.coordinates);
 
-      let current_finger = fingers.find(finger => finger.id === payload.id);
+      const current_finger = fingers.find(finger => finger.id === payload_finger.id);
       if (current_finger === undefined) {
-            current_finger = new finger(payload.id, coordinates, ctx, 10);
-            fingers.push(current_finger);
+            fingers.push(new Finger(payload_finger.id, coordinates, payload_finger.status, payload_finger.color));
       } else {
-            if (payload.status === Status.Delete ){
-                  fingers = fingers.filter(finger => finger.id !== payload.id);     // Remove from fingers
-            }
             current_finger.coordinates = coordinates;
-            current_finger.status = payload.status;
+            current_finger.status = payload_finger.status;
       }
 
-      // current_finger.draw_finger_to_canvas(payload.status);    // Replaced by method below
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      draw();
+      bottom_info.innerHTML = "Finger " + current_finger.id + " is at " + current_finger.status;
 
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let finger of fingers) {
+            const { coordinates, status, color } = finger;
+            if (status === Status.Create || status === Status.Update) {
+                  ctx.fillStyle = color;
+                  console.log(coordinates[0], coordinates[1])
+                  ctx.fillRect(coordinates[0], coordinates[1], 10, 10);
+            }
+      }
 
 });
-
-function draw () {
-      drawButton(0,0, "    Test");
-      console.log(canvas.height, canvas.width);
-
-      // Fingers:
-      for (let finger of fingers) {
-            let coords = finger.coordinates;
-            if (coords !== undefined) {   // Todo: Why undefined? Might be a problem
-                  ctx.fillStyle = finger.color;
-                  ctx.fillRect(finger.coordinates[0], finger.coordinates[1], 10, 10);
-            }
-      }
-}
 
 
 function denormalizeCoordinates(normalizedCoordinates) {
