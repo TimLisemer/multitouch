@@ -27,7 +27,7 @@ await listen('finger_update', (event) => {
             current_finger.status = payload_finger.status;
       }
 
-      bottom_info.innerHTML = "Finger " + current_finger.id + " is at " + coordinates[0] + ", " + coordinates[1];
+      bottom_info.innerHTML = "Finger: " + payload_finger.id + " Status: " + payload_finger.status + " Coordinates: " + coordinates;
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -35,22 +35,24 @@ await listen('finger_update', (event) => {
             const { coordinates, status, color } = finger;
             if (status === Status.Create || status === Status.Update) {
                   ctx.fillStyle = color;
-                  console.log(coordinates[0], coordinates[1])
                   ctx.fillRect(coordinates[0], coordinates[1], 10, 10);
             }
       }
+
 
       for (let button of buttons) {
             drawButton(button);
       }
 
+
 });
 
 
-await listen('button_update', (event) => {
+await listen('button_create', (event) => {
       const payload_button = Button.deserializePayload(event.payload);
       buttons.push(payload_button);
 });
+
 
 
 
@@ -66,6 +68,9 @@ function denormalizeCoordinates(normalizedCoordinates) {
 
 function drawButton(button) {
       const {coordinates, dimensions, label, color} = button;
+      console.log("Drawing button " + button.label + " at " + button.coordinates);
+      console.log(coordinates, dimensions, label, color);
+      /*
       // Draw a button-like rectangle
       ctx.fillStyle = color;
       ctx.fillRect(coordinates[0], coordinates[1], dimensions[0], dimensions[1]);
@@ -74,4 +79,5 @@ function drawButton(button) {
       ctx.fillStyle = 'white'; // White text color
       ctx.font = 'bold 14px Arial';
       ctx.fillText(label, coordinates[0] + 10, coordinates[1] + 20); // Adjust text position according to button size
+      */
 }

@@ -1,12 +1,14 @@
 use crate::button::Button;
 use crate::finger::Finger;
 
-pub fn initialize_ui() -> Vec<Finger> {
+pub fn initialize_ui() -> (Vec<Finger>, Vec<Button>) {
     // Initialize the UI here
     println!("Initializing UI");
     let fingers:Vec<Finger> = Vec::new();
-    create_buttons();
-    fingers
+    let buttons: Vec<Button> = create_buttons();
+    let state: (Vec<Finger>, Vec<Button>) = (fingers, buttons);
+
+    state
 }
 
 fn create_buttons() -> Vec<Button> {

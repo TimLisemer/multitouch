@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use tauri::Window;
 use tuio_rs::client::{CursorEvent, TuioEvents};
+use crate::button::Button;
 
 #[derive(Clone, serde::Serialize)]
 pub(crate) enum Status {
@@ -50,9 +51,10 @@ fn get_random_color() -> String {
     color
 }
 
-pub fn process_finger_event(events: TuioEvents, window: Window, state: Arc<Mutex<Vec<Finger>>>) {
+pub fn process_finger_event(events: TuioEvents, window: Window, state: Arc<Mutex<(Vec<Finger>, Vec<Button>)>>) {
     for event in events.cursor_events {
-        let mut fingers: MutexGuard<Vec<Finger>> = state.lock().unwrap();
+        let mut state: MutexGuard<(Vec<Finger>, Vec<Button>)> = state.lock().unwrap();
+        let fingers = &mut state.0;
         match event {
             CursorEvent::New(data) => {
                 let finger = Finger::new(data.cursor.get_session_id(), (data.cursor.get_position().x, data.cursor.get_position().y));
