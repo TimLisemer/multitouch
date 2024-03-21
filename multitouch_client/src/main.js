@@ -10,14 +10,12 @@ const ctx = canvas.getContext('2d');
 
 const bottom_info = document.getElementById('bottom_info');
 
-let fingers = [Finger];
-let buttons = [Button];
-
-invoke("start_background_worker").then(() => console.log("Background worker started"));
+let fingers = [];
+let buttons = [];
 
 await listen('finger_update', (event) => {
       const payload_finger = Finger.deserializePayload(event.payload)
-      const coordinates = denormalizeCoordinates(payload_finger.coordinates);
+      const coordinates = denormalize(payload_finger.coordinates);
 
       const current_finger = fingers.find(finger => finger.id === payload_finger.id);
       if (current_finger === undefined) {
@@ -39,16 +37,15 @@ await listen('finger_update', (event) => {
             }
       }
 
-
-      for (let button of buttons) {
-            drawButton(button);
-      }
-
+        for (let button of buttons) {
+              drawButton(button);
+        }
 
 });
 
 
 await listen('button_create', (event) => {
+      console.log("Button create event received");
       const payload_button = Button.deserializePayload(event.payload);
       buttons.push(payload_button);
 });
@@ -56,7 +53,7 @@ await listen('button_create', (event) => {
 
 
 
-function denormalizeCoordinates(normalizedCoordinates) {
+function denormalize(normalizedCoordinates) {
       const minX = 0;
       const minY = 0;
       const maxX = canvas.width;
@@ -68,16 +65,22 @@ function denormalizeCoordinates(normalizedCoordinates) {
 
 function drawButton(button) {
       const {coordinates, dimensions, label, color} = button;
-      console.log("Drawing button " + button.label + " at " + button.coordinates);
-      console.log(coordinates, dimensions, label, color);
-      /*
+      // Denormalize coordinates and dimensions
+      const denormalizedCoordinates = denormalize(coordinates);
+      const denormalizedDimensions = denormalize(dimensions);
+
       // Draw a button-like rectangle
       ctx.fillStyle = color;
-      ctx.fillRect(coordinates[0], coordinates[1], dimensions[0], dimensions[1]);
+      ctx.fillRect(denormalizedCoordinates[0], denormalizedCoordinates[1], denormalizedDimensions[0], denormalizedDimensions[1]);
 
       // Add text to the button
       ctx.fillStyle = 'white'; // White text color
       ctx.font = 'bold 14px Arial';
       ctx.fillText(label, coordinates[0] + 10, coordinates[1] + 20); // Adjust text position according to button size
-      */
 }
+
+invoke('button_create').then(() => {
+      invoke("start_background_worker").then(() => {
+            console.log("Background worker started");
+      });
+});

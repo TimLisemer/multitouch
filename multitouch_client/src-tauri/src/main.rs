@@ -32,7 +32,7 @@ fn main() {
     let ui = initialize_ui();
     let my_state = MyState::new(ui);
     tauri::Builder::default().manage(my_state)
-        .invoke_handler(tauri::generate_handler![start_background_worker])
+        .invoke_handler(tauri::generate_handler![start_background_worker, button_create])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -41,18 +41,27 @@ fn main() {
 fn start_background_worker(window: Window, state: State<MyState>) {
     // Start the background worker here
     println!("Starting background worker");
-    let state_clone = state.get_ui();
+    let state_ui = state.get_ui();
 
     std::thread::spawn(move || {
         let client = Client::new().unwrap();
         client.connect().expect("Client connecting");
         loop {
-            /// send_button_create_event(window.clone(), state_cone.lock().unwrap().1.clone());
             if let Ok(Some(events)) = client.refresh() {
-                process_finger_event(events, window.clone(), state_clone.clone());
+                process_finger_event(events, window.clone(), state_ui.clone());
             }
         }
     });
 }
+
+
+#[tauri::command]
+async fn button_create(window: Window, state: State<'_, MyState>) -> Result<(), tauri::Error> {
+    println!("Creating buttons");
+    let state_ui = state.get_ui();
+    send_button_create_event(window.clone(), state_ui.lock().unwrap().1.clone());
+    Ok(())
+}
+
 
 

@@ -1,6 +1,6 @@
 use tauri::Window;
 
-# [derive(Clone, serde::Serialize)]
+# [derive(Clone, serde::Serialize, Debug)]
 pub struct Button {
     id: i32,
     coordinates: (f32, f32),

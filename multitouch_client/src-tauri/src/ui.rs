@@ -13,7 +13,7 @@ pub fn initialize_ui() -> (Vec<Finger>, Vec<Button>) {
 
 fn create_buttons() -> Vec<Button> {
     vec![
-        Button::new(1, (0.0, 0.0), (0.2, 0.1), "Test".to_string(), "green".to_string()),
+        Button::new(1, (0.0, 0.0), (0.12, 0.07), "Test".to_string(), "green".to_string()),
     ]
 }
 
