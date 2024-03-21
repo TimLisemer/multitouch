@@ -1,8 +1,8 @@
 export class Button {
-    constructor(id, coordinates, dimension, label, color) {
+    constructor(id, coordinates, dimensions, label, color) {
         this._id = id;
         this._coordinates = coordinates;
-        this._dimension = dimension;
+        this._dimensions = dimensions;
         this._label = label;
         this._color = color;
     }
@@ -13,8 +13,8 @@ export class Button {
     get coordinates() {
         return this._coordinates;
     }
-    get dimension() {
-        return this._dimension;
+    get dimensions() {
+        return this._dimensions;
     }
     get label() {
         return this._label;
@@ -26,10 +26,10 @@ export class Button {
     static deserializePayload(payload) {
         const id = payload.id;
         const coordinates = payload.coordinates;
-        const dimension = payload.dimension;
+        const dimensions = payload.dimensions;
         const label = payload.label;
         const color = payload.color;
 
-        return new Button(id, coordinates, dimension, label, color);
+        return new Button(id, coordinates, dimensions, label, color);
     }
 }
