@@ -1,4 +1,5 @@
-use crate::button::Button;
+use std::sync::{Arc, Mutex};
+use crate::button::{Button, is_inside_button};
 use crate::finger::Finger;
 
 pub fn initialize_ui() -> (Vec<Finger>, Vec<Button>) {
@@ -17,12 +18,24 @@ fn create_buttons() -> Vec<Button> {
     ]
 }
 
-pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger) {
+pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger, ui: (Vec<Finger>, Vec<Button>)) {
     // Handle touch click here
-    println!("Touch click at {:?} by {:?}", coordinates, finger.get_id());
+    println!("Touch click at {:?} by {:?}", coordinates, finger.id);
+    let button: Option<Button> = is_inside_button(finger, ui.clone());
+    println!("Touch2 click at {:?} by {:?}", coordinates, finger.id);
+    if let Some(button) = button{
+        println!("Touch1 click at {:?} by {:?}", coordinates, finger.id);
+        handle_button_click(button, finger, ui.clone());
+    }
+    println!("Touch3 click at {:?} by {:?}", coordinates, finger.id);
 }
 
-pub(crate) fn handle_touch_hold(coordinates: (f32, f32), finger: &Finger) {
+pub(crate) fn handle_touch_hold(coordinates: (f32, f32), finger: &Finger, ui: (Vec<Finger>, Vec<Button>)) {
     // Handle touch hold here
-    println!("Touch hold at {:?} by {:?}", coordinates, finger.get_id());
+    // println!("Touch hold at {:?} by {:?}", coordinates, finger.get_id());
+}
+
+pub fn handle_button_click(button: Button, finger: &Finger, ui: (Vec<Finger>, Vec<Button>)) {
+    // Handle button click here
+    println!("Button click on {:?}", button);
 }

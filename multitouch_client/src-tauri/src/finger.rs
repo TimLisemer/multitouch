@@ -14,8 +14,8 @@ pub(crate) enum Status {
 
 # [derive(Clone, serde::Serialize)]
 pub struct Finger {
-    id: i32,
-    coordinates: (f32, f32),
+    pub(crate) id: i32,
+    pub(crate) coordinates: (f32, f32),
     history: Vec<(f32, f32)>,
     color: String,
     status: Status,
@@ -47,10 +47,6 @@ impl Finger {
         let y = self.coordinates.1 - coordinates.1;
         (x * x + y * y).sqrt() < distance
     }
-
-    pub(crate) fn get_id(&self) -> i32 {
-        self.id
-    }
 }
 
 fn get_random_color() -> String {
@@ -62,10 +58,11 @@ fn get_random_color() -> String {
     color
 }
 
-pub fn process_finger_event(events: TuioEvents, window: Window, state: Arc<Mutex<(Vec<Finger>, Vec<Button>)>>) {
+pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mutex<(Vec<Finger>, Vec<Button>)>>) {
+    let state_ui_clone = state.lock().unwrap().clone();
     for event in events.cursor_events {
-        let mut state: MutexGuard<(Vec<Finger>, Vec<Button>)> = state.lock().unwrap();
-        let fingers = &mut state.0;
+        let mut state_ui: MutexGuard<(Vec<Finger>, Vec<Button>)> = state.lock().unwrap();
+        let fingers = &mut state_ui.0;
         match event {
             CursorEvent::New(data) => {
                 let finger = Finger::new(data.cursor.get_session_id(), (data.cursor.get_position().x, data.cursor.get_position().y));
@@ -77,20 +74,20 @@ pub fn process_finger_event(events: TuioEvents, window: Window, state: Arc<Mutex
                 finger.update((data.cursor.get_position().x, data.cursor.get_position().y));
                 window.emit("finger_update", finger.clone()).unwrap();
 
-                determine_if_hold(finger);
+                determine_if_hold(finger, state_ui_clone.clone());
             }
             CursorEvent::Remove(data) => {
                 let finger = fingers.iter_mut().find(|f| f.id == data.cursor.get_session_id()).unwrap();
                 finger.delete();
                 window.emit("finger_update", finger.clone()).unwrap();
 
-                determine_if_click(finger);
+                determine_if_click(finger, state_ui_clone.clone());
             }
         }
     }
 }
 
-fn determine_if_hold(finger: &Finger){
+fn determine_if_hold(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
     let threshold: usize = 10;
     // if last threshold coordinates are within 0.2 distance of each other, then it's a hold
     if finger.history.len() > threshold {
@@ -102,15 +99,15 @@ fn determine_if_hold(finger: &Finger){
             }
         }
         if hold {
-            handle_touch_hold(finger.coordinates, finger);
+            handle_touch_hold(finger.coordinates, finger, ui);
         }
     }
 }
 
-fn determine_if_click(finger: &Finger){
+fn determine_if_click(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
     let threshold: usize = 10;
     // finger.history.len() < threshold then it's a click
     if finger.history.len() < threshold {
-        handle_touch_click(finger.coordinates, finger);
+        handle_touch_click(finger.coordinates, finger, ui);
     }
 }
