@@ -17,17 +17,12 @@ fn create_buttons() -> Vec<Button> {
     ]
 }
 
-fn handle_touch_event() {
-    // Handle touch events here
-    println!("Handling touch event");
-}
-
-fn touch_click() {
+pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger) {
     // Handle touch click here
-    println!("Touch click");
+    println!("Touch click at {:?} by {:?}", coordinates, finger.get_id());
 }
 
-fn touch_hold() {
+pub(crate) fn handle_touch_hold(coordinates: (f32, f32), finger: &Finger) {
     // Handle touch hold here
-    println!("Touch hold");
+    println!("Touch hold at {:?} by {:?}", coordinates, finger.get_id());
 }
