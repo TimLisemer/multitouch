@@ -48,6 +48,9 @@ await listen('button_create', (event) => {
       console.log("Button create event received");
       const payload_button = Button.deserializePayload(event.payload);
       buttons.push(payload_button);
+      for (let button of buttons) {
+            drawButton(button);
+      }
 });
 
 

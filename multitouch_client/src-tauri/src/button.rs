@@ -27,7 +27,6 @@ impl Button {
 pub fn is_inside_button(finger: &Finger, ui: &mut UiStates) -> Option<Button> {
     let (x, y) = finger.coordinates;
     for button in ui.get_buttons().iter() {
-        println!("inside button");
         let (button_x, button_y) = button.coordinates;
         let (button_width, button_height) = button.dimensions;
         if x >= button_x && x <= button_x + button_width && y >= button_y && y <= button_y + button_height {

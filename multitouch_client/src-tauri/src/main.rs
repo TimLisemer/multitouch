@@ -13,6 +13,7 @@ use crate::ui::UiStates;
 mod button;
 mod ui;
 mod finger;
+mod shape;
 
 #[derive(Clone)]
 struct MyState {
