@@ -1,14 +1,28 @@
 use crate::button::{Button, is_inside_button};
 use crate::finger::Finger;
 
-pub fn initialize_ui() -> (Vec<Finger>, Vec<Button>) {
-    // Initialize the UI here
-    println!("Initializing UI");
-    let fingers:Vec<Finger> = Vec::new();
-    let buttons: Vec<Button> = create_buttons();
-    let state: (Vec<Finger>, Vec<Button>) = (fingers, buttons);
+# [derive(Clone)]
+pub(crate) struct UiStates {
+    fingers: Vec<Finger>,
+    buttons: Vec<Button>,
+}
 
-    state
+impl UiStates {
+    pub fn new() -> Self {
+        println!("Initializing UI");
+        Self {
+            fingers: Vec::new(),
+            buttons: create_buttons(),
+        }
+    }
+
+    pub fn get_fingers(&mut self) -> &mut Vec<Finger> {
+        &mut self.fingers
+    }
+
+    pub fn get_buttons(&mut self) -> &mut Vec<Button> {
+        &mut self.buttons
+    }
 }
 
 fn create_buttons() -> Vec<Button> {
@@ -17,7 +31,7 @@ fn create_buttons() -> Vec<Button> {
     ]
 }
 
-pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger, ui: &(Vec<Finger>, Vec<Button>)) {
+pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger, ui: &mut UiStates) {
     // Handle touch click here
     println!("Touch click at {:?} by {:?}", coordinates, finger.id);
     let button: Option<Button> = is_inside_button(finger, ui);
@@ -29,12 +43,12 @@ pub(crate) fn handle_touch_click(coordinates: (f32, f32), finger: &Finger, ui: &
     println!("Touch3 click at {:?} by {:?}", coordinates, finger.id);
 }
 
-pub(crate) fn handle_touch_hold(coordinates: (f32, f32), finger: &Finger, ui: &(Vec<Finger>, Vec<Button>)) {
+pub(crate) fn handle_touch_hold(coordinates: (f32, f32), finger: &Finger, ui: &mut UiStates) {
     // Handle touch hold here
     // println!("Touch hold at {:?} by {:?}", coordinates, finger.get_id());
 }
 
-pub fn handle_button_click(button: Button, finger: &Finger, ui: &(Vec<Finger>, Vec<Button>)) {
+pub fn handle_button_click(button: Button, finger: &Finger, ui: &mut UiStates) {
     // Handle button click here
     println!("Button click on {:?}", button);
 }

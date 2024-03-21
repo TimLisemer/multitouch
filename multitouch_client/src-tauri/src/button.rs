@@ -1,6 +1,7 @@
 use tauri::Window;
 
 use crate::finger::Finger;
+use crate::ui::UiStates;
 
 # [derive(Clone, serde::Serialize, Debug)]
 pub struct Button {
@@ -23,9 +24,9 @@ impl Button {
     }
 }
 
-pub fn is_inside_button(finger: &Finger, ui: &(Vec<Finger>, Vec<Button>)) -> Option<Button> {
+pub fn is_inside_button(finger: &Finger, ui: &mut UiStates) -> Option<Button> {
     let (x, y) = finger.coordinates;
-    for button in ui.1.iter() {
+    for button in ui.get_buttons().iter() {
         println!("inside button");
         let (button_x, button_y) = button.coordinates;
         let (button_width, button_height) = button.dimensions;

@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use tauri::Window;
 use tuio_rs::client::{CursorEvent, TuioEvents};
-use crate::button::Button;
-use crate::ui::{handle_touch_click, handle_touch_hold};
+
+use crate::ui::{handle_touch_click, handle_touch_hold, UiStates};
 
 #[derive(Clone, serde::Serialize, PartialEq)]
 pub(crate) enum Status {
@@ -58,11 +58,11 @@ fn get_random_color() -> String {
     color
 }
 
-pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mutex<(Vec<Finger>, Vec<Button>)>>) {
+pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mutex<UiStates>>) {
     let state_ui_clone = state.lock().unwrap().clone();
     for event in events.cursor_events {
-        let mut state_ui: MutexGuard<(Vec<Finger>, Vec<Button>)> = state.lock().unwrap();
-        let fingers = &mut state_ui.0;
+        let mut state_ui: MutexGuard<UiStates> = state.lock().unwrap();
+        let fingers = &mut state_ui.get_fingers();
         match event {
             CursorEvent::New(data) => {
                 let finger = Finger::new(data.cursor.get_session_id(), (data.cursor.get_position().x, data.cursor.get_position().y));
@@ -87,7 +87,7 @@ pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mute
     }
 }
 
-fn determine_if_hold(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
+fn determine_if_hold(finger: &Finger, mut ui: UiStates){
     let threshold: usize = 10;
     // if last threshold coordinates are within 0.2 distance of each other, then it's a hold
     if finger.history.len() > threshold {
@@ -99,15 +99,15 @@ fn determine_if_hold(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
             }
         }
         if hold {
-            handle_touch_hold(finger.coordinates, finger, &ui);
+            handle_touch_hold(finger.coordinates, finger, &mut ui);
         }
     }
 }
 
-fn determine_if_click(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
+fn determine_if_click(finger: &Finger, mut ui: UiStates){
     let threshold: usize = 10;
     // finger.history.len() < threshold then it's a click
     if finger.history.len() < threshold {
-        handle_touch_click(finger.coordinates, finger, &ui);
+        handle_touch_click(finger.coordinates, finger, &mut ui);
     }
 }
