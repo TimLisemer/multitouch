@@ -99,7 +99,7 @@ fn determine_if_hold(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
             }
         }
         if hold {
-            handle_touch_hold(finger.coordinates, finger, ui);
+            handle_touch_hold(finger.coordinates, finger, &ui);
         }
     }
 }
@@ -108,6 +108,6 @@ fn determine_if_click(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)){
     let threshold: usize = 10;
     // finger.history.len() < threshold then it's a click
     if finger.history.len() < threshold {
-        handle_touch_click(finger.coordinates, finger, ui);
+        handle_touch_click(finger.coordinates, finger, &ui);
     }
 }

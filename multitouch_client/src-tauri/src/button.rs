@@ -1,5 +1,5 @@
-use std::sync::{Arc, Mutex};
 use tauri::Window;
+
 use crate::finger::Finger;
 
 # [derive(Clone, serde::Serialize, Debug)]
@@ -23,7 +23,7 @@ impl Button {
     }
 }
 
-pub fn is_inside_button(finger: &Finger, ui: (Vec<Finger>, Vec<Button>)) -> Option<Button> {
+pub fn is_inside_button(finger: &Finger, ui: &(Vec<Finger>, Vec<Button>)) -> Option<Button> {
     let (x, y) = finger.coordinates;
     for button in ui.1.iter() {
         println!("inside button");
