@@ -13,6 +13,13 @@ const bottom_info = document.getElementById('bottom_info');
 let fingers = [];
 let buttons = [];
 
+const unlisten = await listen('button_click', (event) => {
+      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+      // event.payload is the payload object
+        console.log('Button click event received' + event.payload);
+});
+
+
 await listen('finger_update', (event) => {
       const payload_finger = Finger.deserializePayload(event.payload)
       const coordinates = denormalize(payload_finger.coordinates);

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use tauri::Window;
+use tauri::{AppHandle, Window};
 use tuio_rs::client::{CursorEvent, TuioEvents};
 
 use crate::ui::{handle_touch_click, handle_touch_hold, UiStates};
@@ -58,7 +58,7 @@ fn get_random_color() -> String {
     color
 }
 
-pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mutex<UiStates>>) {
+pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mutex<UiStates>>, app_handle: AppHandle) {
     // let state_ui_clone = state.lock().unwrap().clone();
     let mut state_ui: MutexGuard<UiStates> = state.lock().unwrap();
     for event in events.cursor_events {
@@ -74,20 +74,20 @@ pub fn process_finger_event(events: TuioEvents, window: Window, state: &Arc<Mute
                 finger.update((data.cursor.get_position().x, data.cursor.get_position().y));
                 window.emit("finger_update", finger.clone()).unwrap();
 
-                determine_if_hold(finger.clone(), &mut *state_ui);
+                determine_if_hold(finger.clone(), &mut *state_ui, &app_handle);
             }
             CursorEvent::Remove(data) => {
                 let finger = fingers.iter_mut().find(|f| f.id == data.cursor.get_session_id()).unwrap();
                 finger.delete();
                 window.emit("finger_update", finger.clone()).unwrap();
 
-                handle_remove_finger(finger.clone(), &mut *state_ui);
+                handle_remove_finger(finger.clone(), &mut *state_ui, &app_handle);
             }
         }
     }
 }
 
-fn determine_if_hold(finger: Finger, mut ui: &mut UiStates){
+fn determine_if_hold(finger: Finger, mut ui: &mut UiStates, app_handle: &AppHandle){
     let threshold: usize = 10;
     // if last threshold coordinates are within 0.2 distance of each other, then it's a hold
     if finger.history.len() > threshold {
@@ -99,12 +99,12 @@ fn determine_if_hold(finger: Finger, mut ui: &mut UiStates){
             }
         }
         if hold {
-            handle_touch_hold(&finger, &mut ui);
+            handle_touch_hold(&finger, &mut ui, app_handle);
         }
     }
 }
 
-fn handle_remove_finger(finger: Finger, ui: &mut UiStates){
+fn handle_remove_finger(finger: Finger, ui: &mut UiStates, app_handle: &AppHandle){
     for shape in ui.get_shapes().iter_mut() {
         if shape.concurrent_finger_ids.contains(&finger.id) {
             shape.concurrent_finger_ids.retain(|&x| x != finger.id);
@@ -112,13 +112,13 @@ fn handle_remove_finger(finger: Finger, ui: &mut UiStates){
         }
     }
 
-    determine_if_click(finger.clone(), &mut *ui);
+    determine_if_click(finger.clone(), &mut *ui, app_handle);
 }
 
-fn determine_if_click(finger: Finger, mut ui: &mut UiStates){
+fn determine_if_click(finger: Finger, mut ui: &mut UiStates, app_handle: &AppHandle){
     let threshold: usize = 10;
     // finger.history.len() < threshold then it's a click
     if finger.history.len() < threshold {
-        handle_touch_click(&finger, &mut ui);
+        handle_touch_click(&finger, &mut ui, app_handle);
     }
 }

@@ -41,7 +41,7 @@ fn main() {
 }
 
 #[tauri::command]
-fn start_background_worker(window: Window, state: State<MyState>) {
+fn start_background_worker(window: Window, state: State<MyState>, app_handle: tauri::AppHandle) {
     // Start the background worker here
     println!("Starting background worker");
     let state_ui = state.get_ui();
@@ -51,7 +51,7 @@ fn start_background_worker(window: Window, state: State<MyState>) {
         client.connect().expect("Client connecting");
         loop {
             if let Ok(Some(events)) = client.refresh() {
-                process_finger_event(events, window.clone(), &state_ui.clone());
+                process_finger_event(events, window.clone(), &state_ui.clone(), app_handle.clone());
             }
         }
     });
