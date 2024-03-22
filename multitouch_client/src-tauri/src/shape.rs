@@ -21,6 +21,22 @@ impl Shape {
             concurrent_finger_ids: Vec::new(),
         }
     }
+
+    pub fn move_shape(&mut self, finger: Finger) {
+        let (click_x, click_y) = finger.coordinates;
+        let (center_x, center_y) = calculate_center(&self.vertices);
+
+        // Calculate the difference between the clicked point and the center of the shape
+        let dx = click_x - center_x;
+        let dy = click_y - center_y;
+
+        // Iterate over vertices and move each one by the same difference
+        for vertex in self.vertices.iter_mut() {
+            vertex.0 += dx;
+            vertex.1 += dy;
+        }
+    }
+
 }
 
 pub fn is_inside_shape<'a>(finger: &Finger, ui: &'a mut UiStates) -> Option<&'a mut Shape> {
@@ -49,3 +65,15 @@ pub fn send_object_create_event(window: Window, objects: Vec<Shape>) {
     }
 }
 
+pub fn calculate_center(vertices: &Vec<(f32, f32)>) -> (f32, f32) {
+    let mut sum_x = 0.0;
+    let mut sum_y = 0.0;
+    let len = vertices.len() as f32;
+
+    for &(x, y) in vertices {
+        sum_x += x;
+        sum_y += y;
+    }
+
+    (sum_x / len, sum_y / len)
+}

@@ -18,6 +18,9 @@ export class Shape {
     get color() {
         return this._color;
     }
+    set vertices(vertices) {
+        this._vertices = vertices;
+    }
 
     static deserializePayload(payload, vertices_from_payload) {
         const id = payload.id;

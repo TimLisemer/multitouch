@@ -59,7 +59,7 @@ await listen('button_create', (event) => {
       }
 });
 
-const button_click = await listen('button_click', (event) => {
+const create_shape = await listen('create_shape', (event) => {
       let vertices = event.payload.vertices;
       for (let i = 0; i < vertices.length; i++) {
             vertices[i] = denormalize(vertices[i]);
@@ -69,6 +69,20 @@ const button_click = await listen('button_click', (event) => {
       shapes.push(shape);
       //shape.print();
       drawShape(ctx, shape.vertices, shape.color);
+});
+
+const update_shape = await listen('update_shape', (event) => {
+        console.log("Update shape event received");
+        let vertices = event.payload.vertices;
+        for (let i = 0; i < vertices.length; i++) {
+                vertices[i] = denormalize(vertices[i]);
+        }
+
+        let shape = shapes.find(shape => shape.id === event.payload.id);
+        if (shape !== undefined) {
+                shape.vertices = vertices;
+                drawShape(ctx, shape.vertices, shape.color);
+        }
 });
 
 

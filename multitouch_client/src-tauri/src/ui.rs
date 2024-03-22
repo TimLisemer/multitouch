@@ -46,6 +46,13 @@ pub(crate) fn handle_touch_click(finger: &Finger, ui: &mut UiStates, app_handle:
 
 pub(crate) fn handle_touch_hold(finger: &Finger, ui: &mut UiStates, app_handle: &AppHandle) {
     // Handle touch hold here
+    for shape in ui.get_shapes().iter_mut() {
+        if shape.concurrent_finger_ids.contains(&finger.id) {
+            handle_shape_hold(shape, finger, app_handle);
+            return;
+        }
+    }
+
     let shape: Option<&mut Shape> = is_inside_shape(finger, ui);
     if let Some(shape) = shape {
         handle_shape_hold(shape, finger, app_handle);
@@ -62,10 +69,10 @@ pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHa
         (0.3, 0.6),
     ];
 
-    let test_rectangle = Shape::new(1, vertices, 1.0);
+    let test_rectangle = Shape::new(ui.get_shapes().len() as i32, vertices, 1.0);
     ui.get_shapes().push(test_rectangle.clone());
 
-    app_handle.emit_all("button_click", test_rectangle.clone()).unwrap();
+    app_handle.emit_all("create_shape", test_rectangle.clone()).unwrap();
 }
 
 pub fn handle_shape_hold(shape: &mut Shape, finger: &Finger, app_handle: &AppHandle) {
@@ -74,4 +81,6 @@ pub fn handle_shape_hold(shape: &mut Shape, finger: &Finger, app_handle: &AppHan
     if !shape.concurrent_finger_ids.contains(&finger.id) {
         shape.concurrent_finger_ids.push(finger.id);
     }
+    shape.move_shape(finger.clone());
+    app_handle.emit_all("update_shape", shape.clone()).unwrap();
 }
