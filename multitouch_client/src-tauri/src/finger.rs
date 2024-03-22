@@ -120,9 +120,6 @@ fn handle_remove_finger(finger: Finger, ui: &mut UiStates, app_handle: &AppHandl
     if let Some(button_ref) = button.as_mut() {
         if button_ref.mode && !button_ref.fingers.contains(&finger.id){
 
-            print!("Button: {:?} Button \n ende \n", button_ref);
-            println!("Finger: {:?}", finger);
-
             app_handle.emit_all("detect_shape", finger.clone()).unwrap();
             button_ref.mode = false; // Mutate the mode field directly through the mutable reference
             button_ref.fingers.clear();

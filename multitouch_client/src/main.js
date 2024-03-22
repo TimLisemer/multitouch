@@ -26,7 +26,12 @@ await listen('finger_update', (event) => {
             fingers.push(new Finger(payload_finger.id, coordinates, payload_finger.status, payload_finger.color));
       } else {
             current_finger.coordinates = coordinates;
-            current_finger.history = payload_finger.history;
+            // set history by denormalizing payload_finger.history
+            let temp_history = [];
+            for (let i = 0; i < payload_finger.history.length; i++) {
+                  temp_history.push(denormalize(payload_finger.history[i]));
+            }
+            current_finger.history = temp_history;
             current_finger.status = payload_finger.status;
       }
 
