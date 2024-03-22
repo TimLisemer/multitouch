@@ -32,7 +32,7 @@ impl UiStates {
 
 fn create_buttons() -> Vec<Button> {
     vec![
-        Button::new(1, (0.0, 0.0), (0.12, 0.07), "Test".to_string(), "green".to_string()),
+        Button::new(1, (0.0, 0.0), (0.12, 0.07), "Test".to_string(), "green".to_string(), "blue".to_string()),
     ]
 }
 
@@ -61,7 +61,15 @@ pub(crate) fn handle_touch_hold(finger: &Finger, ui: &mut UiStates, app_handle: 
 
 pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHandle) {
     // Handle button click here
-    // let test_rectangle = Shape::new(1, vec![(0.5, 0.5), (0.5, 0.6), (0.6, 0.5), (0.6, 0.6)], 1.0, "blue".to_string());
+    let mut button: &mut Button = ui.get_buttons().iter_mut().find(|b| b.id == button.id).unwrap();
+    println!("Button click on {:?}", button);
+    let original_color = button.color.clone();
+    let original_mode_color = button.mode_color.clone();
+    button.color = original_mode_color;
+    button.mode_color = original_color;
+    button.mode = !button.mode;
+    app_handle.emit_all("update_button_color", button.clone()).unwrap();
+
     let vertices = vec![
         (0.3, 0.4),
         (0.7, 0.4),
@@ -77,7 +85,6 @@ pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHa
 
 pub fn handle_shape_hold(shape: &mut Shape, finger: &Finger, app_handle: &AppHandle) {
     // Handle shape hold here
-    println!("\n\nShape hold on {:?}", shape);
     if !shape.concurrent_finger_ids.contains(&finger.id) {
         shape.concurrent_finger_ids.push(finger.id);
     }

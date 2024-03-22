@@ -5,21 +5,25 @@ use crate::ui::UiStates;
 
 # [derive(Clone, serde::Serialize, Debug)]
 pub struct Button {
-    id: i32,
+    pub(crate) id: i32,
     coordinates: (f32, f32),
     dimensions: (f32, f32),
     label: String,
-    color: String,
+    pub(crate) color: String,
+    pub(crate) mode_color: String,
+    pub mode: bool,
 }
 
 impl Button {
-    pub fn new(id: i32, coordinates: (f32, f32), dimensions: (f32, f32), label: String, color: String) -> Self {
+    pub fn new(id: i32, coordinates: (f32, f32), dimensions: (f32, f32), label: String, color: String, mode_color: String) -> Self {
         Self {
             id,
             coordinates,
             dimensions,
             label,
             color,
+            mode_color,
+            mode: false,
         }
     }
 }

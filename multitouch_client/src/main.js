@@ -27,7 +27,12 @@ await listen('finger_update', (event) => {
             current_finger.status = payload_finger.status;
       }
 
-      bottom_info.innerHTML = "Finger: " + payload_finger.id + " Status: " + payload_finger.status + " Coordinates: " + coordinates;
+      // bottom_info.innerHTML = "Finger: " + payload_finger.id + " Status: " + payload_finger.status + " Coordinates: " + coordinates;
+      if (!buttons.at(0).mode) {
+            bottom_info.innerHTML = "Draw your shape";
+      } else {
+            bottom_info.innerHTML = "Click the button to draw a shape";
+      }
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -49,13 +54,25 @@ await listen('finger_update', (event) => {
 
 });
 
-
 await listen('button_create', (event) => {
       console.log("Button create event received");
       const payload_button = Button.deserializePayload(event.payload);
       buttons.push(payload_button);
       for (let button of buttons) {
             drawButton(button);
+      }
+      bottom_info.innerHTML = "Click the button to draw a shape";
+});
+
+const update_button_color = await listen('update_button_color', (event) => {
+        console.log("Update button color event received");
+      let button = buttons.find(button => button.id === event.payload.id);
+      if (button !== undefined) {
+            button.color = event.payload.color;
+            button.mode = event.payload.mode;
+            for (let button of buttons) {
+                  drawButton(button);
+            }
       }
 });
 
@@ -72,7 +89,6 @@ const create_shape = await listen('create_shape', (event) => {
 });
 
 const update_shape = await listen('update_shape', (event) => {
-        console.log("Update shape event received");
         let vertices = event.payload.vertices;
         for (let i = 0; i < vertices.length; i++) {
                 vertices[i] = denormalize(vertices[i]);
