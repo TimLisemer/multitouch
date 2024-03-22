@@ -49,7 +49,7 @@ impl Finger {
     }
 }
 
-fn get_random_color() -> String {
+pub(crate) fn get_random_color() -> String {
     let letters = "0123456789ABCDEF";
     let mut color = "#".to_string();
     for _ in 0..6 {

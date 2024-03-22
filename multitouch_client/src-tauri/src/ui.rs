@@ -10,11 +10,6 @@ pub(crate) struct UiStates {
     shapes: Vec<Shape>,
 }
 
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    message: String,
-}
-
 impl UiStates {
     pub fn new() -> Self {
         println!("Initializing UI");
@@ -60,12 +55,17 @@ pub(crate) fn handle_touch_hold(finger: &Finger, ui: &mut UiStates, app_handle: 
 pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHandle) {
     // Handle button click here
     // let test_rectangle = Shape::new(1, vec![(0.5, 0.5), (0.5, 0.6), (0.6, 0.5), (0.6, 0.6)], 1.0, "blue".to_string());
-    println!("\n Button click on {:?}", button);
+    let vertices = vec![
+        (0.3, 0.4),
+        (0.7, 0.4),
+        (0.7, 0.6),
+        (0.3, 0.6),
+    ];
 
-    let test_rectangle = Shape::new(1, vec![(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)], 1.0, "blue".to_string());
-    ui.get_shapes().push(test_rectangle);
+    let test_rectangle = Shape::new(1, vertices, 1.0);
+    ui.get_shapes().push(test_rectangle.clone());
 
-    app_handle.emit_all("button_click", Payload { message: "Tauri is awesome!".into() }).unwrap();
+    app_handle.emit_all("button_click", test_rectangle.clone()).unwrap();
 }
 
 pub fn handle_shape_hold(shape: &mut Shape, finger: &Finger, app_handle: &AppHandle) {

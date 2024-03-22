@@ -1,5 +1,5 @@
 use tauri::Window;
-use crate::finger::Finger;
+use crate::finger::{Finger, get_random_color};
 use crate::ui::UiStates;
 
 # [derive(Clone, serde::Serialize, Debug)]
@@ -12,12 +12,12 @@ pub struct Shape {
 }
 
 impl Shape {
-    pub fn new(id: i32, vertices: Vec<(f32, f32)>, scale: f32, color: String) -> Self {
+    pub fn new(id: i32, vertices: Vec<(f32, f32)>, scale: f32) -> Self {
         Self {
             id,
             vertices,
             scale,
-            color,
+            color: get_random_color(),
             concurrent_finger_ids: Vec::new(),
         }
     }
