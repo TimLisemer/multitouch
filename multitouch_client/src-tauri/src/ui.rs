@@ -40,7 +40,7 @@ pub(crate) fn handle_touch_click(finger: &Finger, ui: &mut UiStates, app_handle:
     // Handle touch click here
     let button: Option<Button> = is_inside_button(finger, ui);
     if let Some(button) = button{
-        handle_button_click(button.clone(), ui, app_handle);
+        handle_button_click(button.clone(), ui, app_handle, finger.id);
     }
 }
 
@@ -59,10 +59,12 @@ pub(crate) fn handle_touch_hold(finger: &Finger, ui: &mut UiStates, app_handle: 
     }
 }
 
-pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHandle) {
+pub fn handle_button_click(button: Button, ui: &mut UiStates, app_handle: &AppHandle, finger_id: i32) {
     // Handle button click here
     let mut button: &mut Button = ui.get_buttons().iter_mut().find(|b| b.id == button.id).unwrap();
     println!("Button click on {:?}", button);
+    button.fingers.push(finger_id);
+
     let original_color = button.color.clone();
     let original_mode_color = button.mode_color.clone();
     button.color = original_mode_color;

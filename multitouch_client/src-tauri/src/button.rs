@@ -12,6 +12,7 @@ pub struct Button {
     pub(crate) color: String,
     pub(crate) mode_color: String,
     pub mode: bool,
+    pub fingers: Vec<i32>,
 }
 
 impl Button {
@@ -24,6 +25,7 @@ impl Button {
             color,
             mode_color,
             mode: false,
+            fingers: Vec::new(),
         }
     }
 }

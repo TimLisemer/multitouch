@@ -30,6 +30,9 @@ export class Button {
     get mode_color() {
         return this._mode_color;
     }
+    set mode_color(mode_color) {
+        this._mode_color = mode_color;
+    }
     get mode() {
         return this._mode;
     }

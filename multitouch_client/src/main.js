@@ -14,6 +14,7 @@ const bottom_info = document.getElementById('bottom_info');
 let fingers = [];
 let buttons = [];
 let shapes = [];
+let bottom_info_text = ""
 
 await listen('finger_update', (event) => {
       const payload_finger = Finger.deserializePayload(event.payload)
@@ -27,12 +28,7 @@ await listen('finger_update', (event) => {
             current_finger.status = payload_finger.status;
       }
 
-      // bottom_info.innerHTML = "Finger: " + payload_finger.id + " Status: " + payload_finger.status + " Coordinates: " + coordinates;
-      if (!buttons.at(0).mode) {
-            bottom_info.innerHTML = "Draw your shape";
-      } else {
-            bottom_info.innerHTML = "Click the button to draw a shape";
-      }
+      printBottomInfo();
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -61,20 +57,29 @@ await listen('button_create', (event) => {
       for (let button of buttons) {
             drawButton(button);
       }
-      bottom_info.innerHTML = "Click the button to draw a shape";
+      setBottomInfo("Click the button to draw a shape");
 });
 
 const update_button_color = await listen('update_button_color', (event) => {
         console.log("Update button color event received");
       let button = buttons.find(button => button.id === event.payload.id);
+      update_button_mode(button);
+});
+
+function update_button_mode(button) {
       if (button !== undefined) {
-            button.color = event.payload.color;
-            button.mode = event.payload.mode;
+            button.color = button.mode_color;
+            button.mode = !button.mode;
             for (let button of buttons) {
                   drawButton(button);
             }
+            if (button.mode) {
+                  setBottomInfo("Draw your shape")
+            } else {
+                  setBottomInfo("Click the button to draw a shape");
+            }
       }
-});
+}
 
 const create_shape = await listen('create_shape', (event) => {
       let vertices = event.payload.vertices;
@@ -101,7 +106,24 @@ const update_shape = await listen('update_shape', (event) => {
         }
 });
 
+const detect_shape = await listen('detect_shape', (event) => {
+      let finger = fingers.find(finger => finger.id === event.payload.id);
+      if (finger === undefined) {
+            setBottomInfo("Error Detecting Shape (Finger Error)");
+      } else {
+            setBottomInfo("Detected Shape: ");
+            update_button_mode(buttons.at(0));
+      }
+});
 
+function setBottomInfo(text) {
+      bottom_info_text = text;
+      printBottomInfo();
+}
+
+function printBottomInfo(){
+      bottom_info.innerHTML = bottom_info_text;
+}
 
 
 function denormalize(normalizedCoordinates) {

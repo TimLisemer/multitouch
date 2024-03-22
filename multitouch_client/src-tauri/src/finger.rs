@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use tauri::{AppHandle, Window};
+use tauri::{AppHandle, Manager, Window};
 use tuio_rs::client::{CursorEvent, TuioEvents};
+use crate::button::Button;
 
 use crate::ui::{handle_touch_click, handle_touch_hold, UiStates};
 
@@ -113,6 +114,17 @@ fn handle_remove_finger(finger: Finger, ui: &mut UiStates, app_handle: &AppHandl
     }
 
     determine_if_click(finger.clone(), &mut *ui, app_handle);
+
+    // Check if button is in mode
+    let mut button: Option<&mut Button> = ui.get_buttons().get_mut(0);
+    if let Some(button_ref) = button.as_mut() {
+        if button_ref.mode && !button_ref.fingers.contains(&finger.id){
+            app_handle.emit_all("detect_shape", finger.clone()).unwrap();
+            button_ref.mode = false; // Mutate the mode field directly through the mutable reference
+            button_ref.fingers.clear();
+            println!("Button mode off");
+        }
+    }
 }
 
 fn determine_if_click(finger: Finger, mut ui: &mut UiStates, app_handle: &AppHandle){
