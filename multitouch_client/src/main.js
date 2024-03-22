@@ -5,6 +5,7 @@ import './size.js';
 import { Finger, Status } from './Finger.js';
 import {Button} from "./Button.js";
 import {Shape} from "./Shape.js";
+import {DollarRecognizer} from "./dollar.js";
 
 const canvas = document.getElementById('main_canvas');
 const ctx = canvas.getContext('2d');
@@ -17,7 +18,7 @@ let shapes = [];
 let bottom_info_text = ""
 
 await listen('finger_update', (event) => {
-      const payload_finger = Finger.deserializePayload(event.payload)
+      const payload_finger = Finger.deserializePayload(event.payload);
       const coordinates = denormalize(payload_finger.coordinates);
 
       const current_finger = fingers.find(finger => finger.id === payload_finger.id);
@@ -25,6 +26,7 @@ await listen('finger_update', (event) => {
             fingers.push(new Finger(payload_finger.id, coordinates, payload_finger.status, payload_finger.color));
       } else {
             current_finger.coordinates = coordinates;
+            current_finger.history = payload_finger.history;
             current_finger.status = payload_finger.status;
       }
 
@@ -111,8 +113,11 @@ const detect_shape = await listen('detect_shape', (event) => {
       if (finger === undefined) {
             setBottomInfo("Error Detecting Shape (Finger Error)");
       } else {
-            setBottomInfo("Detected Shape: ");
+            let recognizer = new DollarRecognizer();
+            let recognize = recognizer.Recognize(finger.history);
+            finger.priint();
             update_button_mode(buttons.at(0));
+            setBottomInfo("Detected Shape: " + recognize.Name + " with a score of " + recognize.Score);
       }
 });
 

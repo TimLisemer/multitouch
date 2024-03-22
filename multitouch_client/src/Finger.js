@@ -26,6 +26,9 @@ export class Finger {
     get history() {
         return this._history;
     }
+    set history(history) {
+        this._history = history;
+    }
     get color() {
         return this._color;
     }
@@ -44,5 +47,9 @@ export class Finger {
         const status = payload.status;
 
         return new Finger(id, coordinates, history, color, status);
+    }
+
+    priint() {
+        console.log(this._id, this._coordinates, this._history, this._color, this._status);
     }
 }

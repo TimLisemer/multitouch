@@ -1,5 +1,5 @@
 export class Button {
-    constructor(id, coordinates, dimensions, label, color, mode_color, mode) {
+    constructor(id, coordinates, dimensions, label, color, mode_color, mode, fingers) {
         this._id = id;
         this._coordinates = coordinates;
         this._dimensions = dimensions;
@@ -7,6 +7,7 @@ export class Button {
         this._color = color;
         this._mode_color = mode_color;
         this._mode = mode;
+        this._fingers = fingers;
     }
 
     get id() {
@@ -48,7 +49,8 @@ export class Button {
         const color = payload.color;
         const mode_color = payload.mode_color;
         const mode = payload.mode;
+        const fingers = payload.fingers;
 
-        return new Button(id, coordinates, dimensions, label, color);
+        return new Button(id, coordinates, dimensions, label, color, mode_color, mode, fingers);
     }
 }
